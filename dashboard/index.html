@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>PayAgentic Ops — Autonomous Settlement & ADK Audit</title>
+  <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-grid.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-theme-alpine-dark.css">
+  <style>
+    body { margin: 0; padding: 24px; background-color: #0d1117; color: #c9d1d9; font-family: -apple-system, sans-serif; }
+    .header-panel { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .badge { padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; text-transform: uppercase; }
+    .badge-pass { background-color: #238636; color: #fff; }
+    .badge-fail { background-color: #da3633; color: #fff; }
+    .badge-hold { background-color: #d29922; color: #000; }
+    .badge-paypal { background-color: #0070ba; color: #fff; }
+    #auditGrid { height: 620px; width: 100%; border-radius: 8px; overflow: hidden; }
+  </style>
+</head>
+<body>
+  <div class="header-panel">
+    <div>
+      <h2 style="margin: 0;">PayAgentic // Settlement & ADK Audit Monitor</h2>
+      <p style="margin: 4px 0 0; color: #8b949e;">Live monitoring of Autonomous Negotiations, PayPal Escrow Holds, and Google ADK Verifications</p>
+    </div>
+    <div>
+      <span class="badge badge-paypal">PayPal Sandbox Connected</span>
+      <span class="badge badge-pass">Webhooks: ACTIVE</span>
+    </div>
+  </div>
+  <div id="auditGrid" class="ag-theme-alpine-dark"></div>
+  <script>
+    const columnDefs = [
+      { field: "transaction_id", headerName: "Deal Ref", width: 130, pinned: "left" },
+      { field: "package_id", headerName: "ADK LoRA Bundle", width: 220 },
+      { field: "target_hardware", headerName: "Target HW", width: 160 },
+      { field: "base_price", headerName: "Base ($)", width: 105, valueFormatter: p => `$${p.value.toFixed(2)}` },
+      { field: "agreed_price", headerName: "Settled ($)", width: 115, valueFormatter: p => `$${p.value.toFixed(2)}` },
+      { field: "discount_pct", headerName: "Discount", width: 110, valueFormatter: p => `${p.value}%` },
+      { field: "guardrail_status", headerName: "Policy Guardrail", width: 160, cellRenderer: p => `<span class="badge ${p.value === 'VERIFIED_PASS' ? 'badge-pass':'badge-fail'}">${p.value}</span>` },
+      { field: "adk_validation", headerName: "ADK Integrity", width: 135, cellRenderer: p => `<span class="badge ${p.value === 'PASS' ? 'badge-pass':'badge-fail'}">${p.value}</span>` },
+      { field: "paypal_order_id", headerName: "PayPal Order", width: 160 },
+      { field: "deal_lifecycle", headerName: "Lifecycle", width: 140, pinned: "right", cellRenderer: p => `<span class="badge ${p.value === 'CAPTURED' ? 'badge-pass': (p.value === 'VOIDED' ? 'badge-fail':'badge-hold')}">${p.value}</span>` }
+    ];
+    const gridOptions = { columnDefs, defaultColDef: { sortable: true, filter: true, resizable: true }, animateRows: true, pagination: true, paginationPageSize: 10 };
+    const eGridDiv = document.querySelector('#auditGrid');
+    new agGrid.Grid(eGridDiv, gridOptions);
+    async function loadFeed() {
+      try {
+        const res = await fetch('/api/v1/dashboard/deals');
+        const data = await res.json();
+        gridOptions.api.setRowData(data);
+      } catch(e) { console.error(e); }
+    }
+    loadFeed();
+  </script>
+</body>
+</html>

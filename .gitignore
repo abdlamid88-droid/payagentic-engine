@@ -1,0 +1,9 @@
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+storage/encrypted/*
+!storage/encrypted/.gitkeep
+storage/packages/*
+!storage/packages/.gitkeep
