@@ -3,8 +3,10 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+
 from app.api.v1.webhooks import router as webhooks_router
 from app.api.v1.dashboard import router as dashboard_router
+from app.api.v1.agent import router as agent_router
 
 app = FastAPI(
     title="PayAgentic Platform",
@@ -20,15 +22,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(webhooks_router, prefix="/api/v1")
+# تسجيل كافة المسارات تحت بادئة /api/v1
+app.include_router(agent_router, prefix="/api/v1")
 app.include_router(dashboard_router, prefix="/api/v1")
+app.include_router(webhooks_router, prefix="/api/v1")
 
 if os.path.exists("dashboard"):
     app.mount("/static", StaticFiles(directory="dashboard"), name="static")
 
 @app.get("/")
 async def serve_dashboard():
-    return FileResponse("dashboard/index.html")
+    if os.path.exists("dashboard/index.html"):
+        return FileResponse("dashboard/index.html")
+    return {"message": "PayAgentic Engine Running"}
 
 @app.get("/healthz")
 async def health_check():
